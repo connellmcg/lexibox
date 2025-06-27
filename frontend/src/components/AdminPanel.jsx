@@ -8,6 +8,7 @@ const AdminPanel = ({ onClose }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -18,15 +19,17 @@ const AdminPanel = ({ onClose }) => {
       setLoading(true);
       setError('');
       
-      const [usersData, documentsData, statsData] = await Promise.all([
+      const [usersData, documentsData, statsData, orgsData] = await Promise.all([
         adminAPI.getAllUsers(),
         adminAPI.getAllDocuments(),
-        adminAPI.getSystemStats()
+        adminAPI.getSystemStats(),
+        adminAPI.getAllOrganizations()
       ]);
       
       setUsers(usersData);
       setDocuments(documentsData);
       setStats(statsData);
+      setOrganizations(orgsData);
     } catch (err) {
       setError('Failed to load admin data. Please try again.');
       console.error('Admin data load error:', err);
@@ -58,6 +61,19 @@ const AdminPanel = ({ onClose }) => {
       alert('User deleted successfully');
     } catch (err) {
       alert('Failed to delete user: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handleDeleteOrganization = async (orgId, orgName) => {
+    if (!window.confirm(`Are you sure you want to delete organization '${orgName}'? This will delete all users and invitations in the org.`)) {
+      return;
+    }
+    try {
+      await adminAPI.deleteOrganization(orgId);
+      setOrganizations(organizations.filter(org => org.id !== orgId));
+      alert('Organization deleted successfully');
+    } catch (err) {
+      alert('Failed to delete organization: ' + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -142,6 +158,16 @@ const AdminPanel = ({ onClose }) => {
             }`}
           >
             All Documents
+          </button>
+          <button
+            onClick={() => setActiveTab('organizations')}
+            className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors duration-200 ${
+              activeTab === 'organizations'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Organizations
           </button>
         </div>
 
@@ -330,6 +356,46 @@ const AdminPanel = ({ onClose }) => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {doc.content ? doc.content.length : 0} characters
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Organizations Tab */}
+          {activeTab === 'organizations' && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900">Organizations</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</th>
+                      <th className="px-4 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {organizations.map(org => (
+                      <tr key={org.id}>
+                        <td className="px-4 py-2 whitespace-nowrap">{org.id}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{org.name}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{org.owner ? `${org.owner.name} (${org.owner.email})` : '-'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{new Date(org.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{org.updated_at ? new Date(org.updated_at).toLocaleString() : '-'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <button
+                            className="text-red-600 hover:underline text-sm"
+                            onClick={() => handleDeleteOrganization(org.id, org.name)}
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}

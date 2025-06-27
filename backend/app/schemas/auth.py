@@ -5,6 +5,7 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
+    org_name: Optional[str] = None  # New field for organization creation
     
     @validator('name')
     def validate_name(cls, v):
@@ -29,6 +30,8 @@ class UserResponse(BaseModel):
     name: str
     email: str
     is_admin: bool
+    is_org_admin: bool
+    organization_id: Optional[int] = None
 
     class Config:
         from_attributes = True

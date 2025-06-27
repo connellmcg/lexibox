@@ -5,6 +5,7 @@ from datetime import datetime
 class UserBase(BaseModel):
     name: str
     email: EmailStr
+    organization_id: Optional[int] = None
 
 class UserCreate(UserBase):
     password: str
@@ -15,6 +16,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     is_admin: bool
+    is_org_admin: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
 

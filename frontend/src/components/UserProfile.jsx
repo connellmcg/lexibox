@@ -199,8 +199,19 @@ const UserProfile = ({ onClose, onProfileUpdate }) => {
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
               </div>
+              {/* Organization Info */}
+              {user?.organization_id && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-900 font-medium">{user.organization_id}</span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.is_org_admin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {user.is_org_admin ? 'Admin' : 'Member'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleProfileUpdate}>
                 <div className="space-y-4">

@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
-from ..models import User, Document
+from ..models import User, Document, Organization, UserInvitation
 from ..schemas.user import UserResponse
 from ..auth import get_current_user
 from ..schemas.document import DocumentResponse
+from ..schemas.organization import OrganizationResponse
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -31,6 +32,8 @@ def get_all_users(
             name=user.name,
             email=user.email,
             is_admin=user.is_admin,
+            is_org_admin=user.is_org_admin,
+            organization_id=user.organization_id,
             created_at=user.created_at,
             updated_at=user.updated_at
         ) for user in users
@@ -101,6 +104,8 @@ def toggle_admin_status(
             name=user.name,
             email=user.email,
             is_admin=user.is_admin,
+            is_org_admin=user.is_org_admin,
+            organization_id=user.organization_id,
             created_at=user.created_at,
             updated_at=user.updated_at
         )
@@ -133,4 +138,46 @@ def delete_user(
     db.delete(user)
     db.commit()
     
-    return {"message": f"User {user.email} and all their documents have been deleted"} 
+    return {"message": f"User {user.email} and all their documents have been deleted"}
+
+@router.get("/organizations", response_model=List[OrganizationResponse])
+def get_all_organizations(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Get all organizations (admin only)"""
+    orgs = db.query(Organization).all()
+    org_responses = []
+    for org in orgs:
+        owner = db.query(User).filter(
+            User.organization_id == org.id,
+            User.is_org_admin == True
+        ).order_by(User.created_at).first()
+        org_responses.append(
+            OrganizationResponse(
+                id=org.id,
+                name=org.name,
+                created_at=org.created_at,
+                updated_at=org.updated_at,
+                owner=owner
+            )
+        )
+    return org_responses
+
+@router.delete("/organizations/{org_id}")
+def delete_organization(
+    org_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    # Delete all users in the org
+    db.query(User).filter(User.organization_id == org_id).delete()
+    # Delete all invitations for the org
+    db.query(UserInvitation).filter(UserInvitation.organization_id == org_id).delete()
+    # Delete the org
+    db.delete(org)
+    db.commit()
+    return {"message": f"Organization {org.name} and all related users/invitations have been deleted"} 

@@ -9,6 +9,7 @@ import SearchResults from './components/SearchResults';
 import DocumentViewer from './components/DocumentViewer';
 import UserProfile from './components/UserProfile';
 import AdminPanel from './components/AdminPanel';
+import OrganizationPanel from './components/OrganizationPanel';
 import { getDocuments, getDocument, searchDocuments, authAPI } from './services/api';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showOrgPanel, setShowOrgPanel] = useState(false);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -276,6 +278,17 @@ function App() {
                     <span>Admin</span>
                   </button>
                 )}
+                {user?.is_org_admin && (
+                  <button
+                    onClick={() => setShowOrgPanel(true)}
+                    className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center space-x-1 border border-blue-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5V6a5 5 0 00-10 0v3a5 5 0 0010 0z" />
+                    </svg>
+                    <span>Organization</span>
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -440,6 +453,11 @@ function App() {
         <AdminPanel
           onClose={() => setShowAdminModal(false)}
         />
+      )}
+
+      {/* Organization Panel Modal */}
+      {showOrgPanel && (
+        <OrganizationPanel onClose={() => setShowOrgPanel(false)} />
       )}
     </div>
   );

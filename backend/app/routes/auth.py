@@ -35,14 +35,35 @@ def signup(user_data: UserSignup, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     
+    organization = None
+    is_org_admin = False
+    # If org_name is provided, create organization and assign user as org admin
+    if user_data.org_name:
+        from ..models.organization import Organization
+        # Check if org already exists
+        existing_org = db.query(Organization).filter(Organization.name == user_data.org_name).first()
+        if existing_org:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Organization name already exists"
+            )
+        organization = Organization(name=user_data.org_name)
+        db.add(organization)
+        db.commit()
+        db.refresh(organization)
+        is_org_admin = True
+    
     # Create new user
     user = create_user(db, user_data.name, user_data.email, user_data.password)
+    if organization:
+        user.organization_id = organization.id
+        user.is_org_admin = True
     
-    # Make cmcginley@gmail.com an admin
+    # Make cmcginley@gmail.com an admin (legacy global admin)
     if user.email == "cmcginley@gmail.com":
         user.is_admin = True
-        db.commit()
-        db.refresh(user)
+    db.commit()
+    db.refresh(user)
     
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -57,7 +78,11 @@ def signup(user_data: UserSignup, db: Session = Depends(get_db)):
             id=user.id,
             name=user.name,
             email=user.email,
-            is_admin=user.is_admin
+            is_admin=user.is_admin,
+            is_org_admin=user.is_org_admin,
+            organization_id=user.organization_id,
+            created_at=user.created_at,
+            updated_at=user.updated_at
         )
     }
 
@@ -83,7 +108,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             id=user.id,
             name=user.name,
             email=user.email,
-            is_admin=user.is_admin
+            is_admin=user.is_admin,
+            is_org_admin=user.is_org_admin,
+            organization_id=user.organization_id,
+            created_at=user.created_at,
+            updated_at=user.updated_at
         )
     }
 
@@ -93,7 +122,11 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "is_org_admin": current_user.is_org_admin,
+        "organization_id": current_user.organization_id,
+        "created_at": current_user.created_at,
+        "updated_at": current_user.updated_at
     }
 
 @router.put("/profile", response_model=UserResponse)

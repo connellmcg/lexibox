@@ -164,6 +164,12 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get all organizations (admin only)
+  getAllOrganizations: async () => {
+    const response = await api.get('/admin/organizations');
+    return response.data;
+  },
+
   // Get all documents (admin only)
   getAllDocuments: async () => {
     const response = await api.get('/admin/documents');
@@ -186,7 +192,55 @@ export const adminAPI = {
   deleteUser: async (userId) => {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
+  },
+
+  deleteOrganization: async (orgId) => {
+    const response = await api.delete(`/admin/organizations/${orgId}`);
+    return response.data;
   }
+};
+
+// Organization & Invitation API
+export const orgAPI = {
+  // Get current user's organization
+  getMyOrg: async () => {
+    const response = await api.get('/org/me');
+    return response.data;
+  },
+  // List users in org (admin only)
+  listOrgUsers: async () => {
+    const response = await api.get('/org/users');
+    return response.data;
+  },
+  // Invite user to org (admin only)
+  inviteUser: async (email, organization_id) => {
+    const response = await api.post('/org/invite', {
+      email,
+      organization_id,
+      invited_by_user_id: null // backend uses auth
+    });
+    return response.data;
+  },
+  // List pending invites (admin only)
+  listInvites: async () => {
+    const response = await api.get('/org/invites');
+    return response.data;
+  },
+  // Accept invitation (by invitee)
+  acceptInvite: async (inviteId) => {
+    const response = await api.post(`/org/accept-invite/${inviteId}`);
+    return response.data;
+  },
+  // Remove user from org (admin only)
+  removeUser: async (userId) => {
+    const response = await api.delete(`/org/users/${userId}`);
+    return response.data;
+  },
+  // Toggle org admin status (admin only)
+  toggleOrgAdmin: async (userId) => {
+    const response = await api.put(`/org/users/${userId}/admin`);
+    return response.data;
+  },
 };
 
 export default api; 

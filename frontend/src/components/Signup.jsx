@@ -5,8 +5,10 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    org_name: ''
   });
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,9 +38,20 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
       return;
     }
 
+    // If creating org, org_name is required
+    if (isCreatingOrg && !formData.org_name.trim()) {
+      setError('Organization name is required');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // TODO: Implement actual signup API call
-      await onSignup(formData);
+      // Pass org_name only if creating org
+      const signupData = {
+        ...formData,
+        org_name: isCreatingOrg ? formData.org_name : undefined
+      };
+      await onSignup(signupData);
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -129,6 +142,39 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
                 placeholder="Confirm your password"
               />
             </div>
+
+            {/* Create Organization Toggle */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isCreatingOrg"
+                checked={isCreatingOrg}
+                onChange={() => setIsCreatingOrg(!isCreatingOrg)}
+                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isCreatingOrg" className="text-sm text-gray-700">
+                Create an organization (team/company)
+              </label>
+            </div>
+
+            {/* Organization Name Field */}
+            {isCreatingOrg && (
+              <div>
+                <label htmlFor="org_name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Organization Name
+                </label>
+                <input
+                  type="text"
+                  id="org_name"
+                  name="org_name"
+                  value={formData.org_name}
+                  onChange={handleChange}
+                  required={isCreatingOrg}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Enter your organization name"
+                />
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
