@@ -14,7 +14,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         gcc \
         g++ \
+        curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -26,8 +30,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy application code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Create uploads directory and set permissions
+RUN mkdir -p uploads \
+    && chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000
